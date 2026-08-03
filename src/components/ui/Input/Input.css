@@ -1,0 +1,307 @@
+.pv-input {
+  --pv-input-primary: var(--admin-primary, #c87400);
+  --pv-input-primary-soft: var(--admin-primary-soft, #fff5e6);
+
+  --pv-input-text: var(--admin-text, #172033);
+  --pv-input-text-soft: var(--admin-text-soft, #667085);
+  --pv-input-text-muted: var(--admin-text-muted, #98a2b3);
+
+  --pv-input-border: var(--admin-border, #e4e7ec);
+  --pv-input-border-strong: var(--admin-border-strong, #d0d5dd);
+
+  --pv-input-success: var(--admin-success, #12b76a);
+  --pv-input-danger: var(--admin-danger, #f04438);
+
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  min-width: 0;
+}
+
+.pv-input--full-width {
+  width: 100%;
+}
+
+/* =========================================================
+   LABEL
+   ========================================================= */
+
+.pv-input__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  color: var(--pv-input-text);
+
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.pv-input__required {
+  color: var(--pv-input-danger);
+}
+
+/* =========================================================
+   CONTROLE
+   ========================================================= */
+
+.pv-input__control {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+
+  width: 100%;
+}
+
+.pv-input__field {
+  width: 100%;
+
+  border: 1px solid var(--pv-input-border);
+  border-radius: 12px;
+
+  background: #ffffff;
+  color: var(--pv-input-text);
+
+  font-family: inherit;
+  font-weight: 500;
+  line-height: 1.4;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.pv-input__field::placeholder {
+  color: var(--pv-input-text-muted);
+  opacity: 1;
+}
+
+.pv-input__field:hover:not(:disabled):not(:read-only) {
+  border-color: var(--pv-input-border-strong);
+}
+
+.pv-input__field:focus {
+  border-color: var(--pv-input-primary);
+
+  box-shadow:
+    0 0 0 4px rgba(200, 116, 0, 0.12);
+}
+
+/* =========================================================
+   TAMANHOS
+   ========================================================= */
+
+.pv-input--sm .pv-input__field {
+  height: 38px;
+  padding: 0 12px;
+
+  font-size: 12px;
+}
+
+.pv-input--md .pv-input__field {
+  height: 44px;
+  padding: 0 14px;
+
+  font-size: 13px;
+}
+
+.pv-input--lg .pv-input__field {
+  height: 50px;
+  padding: 0 16px;
+
+  font-size: 14px;
+}
+
+.pv-input__field--with-left-icon {
+  padding-left: 42px !important;
+}
+
+.pv-input__field--with-right-icon {
+  padding-right: 42px !important;
+}
+
+/* =========================================================
+   ÍCONES
+   ========================================================= */
+
+.pv-input__icon {
+  position: absolute;
+  z-index: 1;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  color: var(--pv-input-text-muted);
+
+  line-height: 1;
+  pointer-events: none;
+}
+
+.pv-input__icon--left {
+  left: 14px;
+}
+
+.pv-input__icon--right {
+  right: 14px;
+}
+
+.pv-input--sm .pv-input__icon {
+  font-size: 12px;
+}
+
+.pv-input--md .pv-input__icon {
+  font-size: 14px;
+}
+
+.pv-input--lg .pv-input__icon {
+  font-size: 15px;
+}
+
+/* =========================================================
+   MENSAGEM
+   ========================================================= */
+
+.pv-input__message {
+  color: var(--pv-input-text-soft);
+
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+/* =========================================================
+   ERRO
+   ========================================================= */
+
+.pv-input--error .pv-input__field {
+  border-color: var(--pv-input-danger);
+}
+
+.pv-input--error .pv-input__field:focus {
+  border-color: var(--pv-input-danger);
+
+  box-shadow:
+    0 0 0 4px rgba(240, 68, 56, 0.12);
+}
+
+.pv-input--error .pv-input__icon,
+.pv-input--error .pv-input__message {
+  color: var(--pv-input-danger);
+}
+
+/* =========================================================
+   SUCESSO
+   ========================================================= */
+
+.pv-input--success .pv-input__field {
+  border-color: var(--pv-input-success);
+}
+
+.pv-input--success .pv-input__field:focus {
+  border-color: var(--pv-input-success);
+
+  box-shadow:
+    0 0 0 4px rgba(18, 183, 106, 0.12);
+}
+
+.pv-input--success .pv-input__icon,
+.pv-input--success .pv-input__message {
+  color: var(--pv-input-success);
+}
+
+/* =========================================================
+   DESABILITADO
+   ========================================================= */
+
+.pv-input--disabled {
+  cursor: not-allowed;
+}
+
+.pv-input--disabled .pv-input__label,
+.pv-input--disabled .pv-input__message {
+  color: var(--pv-input-text-muted);
+}
+
+.pv-input--disabled .pv-input__field {
+  border-color: var(--pv-input-border);
+
+  background: #f2f4f7;
+  color: var(--pv-input-text-muted);
+
+  cursor: not-allowed;
+}
+
+.pv-input--disabled .pv-input__icon {
+  color: var(--pv-input-text-muted);
+}
+
+/* =========================================================
+   SOMENTE LEITURA
+   ========================================================= */
+
+.pv-input--readonly .pv-input__field {
+  background: #f8fafc;
+  color: var(--pv-input-text-soft);
+
+  cursor: default;
+}
+
+/* =========================================================
+   INPUT NUMBER
+   ========================================================= */
+
+.pv-input__field[type="number"] {
+  appearance: textfield;
+  -moz-appearance: textfield;
+}
+
+.pv-input__field[type="number"]::-webkit-inner-spin-button,
+.pv-input__field[type="number"]::-webkit-outer-spin-button {
+  margin: 0;
+
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* =========================================================
+   AUTOFILL
+   ========================================================= */
+
+.pv-input__field:-webkit-autofill,
+.pv-input__field:-webkit-autofill:hover,
+.pv-input__field:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--pv-input-text);
+
+  box-shadow:
+    0 0 0 1000px #ffffff inset;
+
+  transition:
+    background-color 9999s ease-out;
+}
+
+/* =========================================================
+   RESPONSIVIDADE
+   ========================================================= */
+
+@media (max-width: 720px) {
+  .pv-input--lg .pv-input__field {
+    height: 46px;
+  }
+}
+
+/* =========================================================
+   REDUÇÃO DE MOVIMENTO
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .pv-input__field {
+    transition: none;
+  }
+}

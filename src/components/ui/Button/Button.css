@@ -1,0 +1,269 @@
+.pv-button {
+  --pv-primary: var(--admin-primary, #b76300);
+  --pv-primary-dark: var(--admin-primary-dark, #8f4d00);
+  --pv-primary-light: var(--admin-primary-light, #fff4e6);
+
+  --pv-success: var(--admin-success, #12b76a);
+  --pv-warning: var(--admin-warning, #f79009);
+  --pv-danger: var(--admin-danger, #f04438);
+
+  --pv-border: var(--admin-border, #e4e7ec);
+  --pv-text: var(--admin-text, #101828);
+  --pv-text-soft: var(--admin-text-soft, #667085);
+
+  position: relative;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  overflow: hidden;
+
+  border: 1px solid transparent;
+  border-radius: 12px;
+
+  cursor: pointer;
+
+  font-family: inherit;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+
+  transition:
+    background .20s,
+    border-color .20s,
+    color .20s,
+    box-shadow .20s,
+    transform .20s;
+}
+
+/* ===========================
+   Tamanhos
+=========================== */
+
+.pv-button--sm{
+    height:36px;
+    padding:0 14px;
+    font-size:12px;
+}
+
+.pv-button--md{
+    height:44px;
+    padding:0 18px;
+    font-size:14px;
+}
+
+.pv-button--lg{
+    height:50px;
+    padding:0 22px;
+    font-size:15px;
+}
+
+.pv-button--xl{
+    height:56px;
+    padding:0 26px;
+    font-size:16px;
+}
+
+/* ===========================
+   Variantes
+=========================== */
+
+.pv-button--primary{
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--pv-primary),
+            var(--pv-primary-dark)
+        );
+
+    color:#fff;
+
+    box-shadow:
+        0 10px 22px rgba(183,99,0,.22);
+}
+
+.pv-button--primary:hover:not(:disabled){
+
+    transform:translateY(-2px);
+
+    box-shadow:
+        0 14px 30px rgba(183,99,0,.30);
+
+}
+
+.pv-button--secondary{
+
+    background:#fff;
+
+    border-color:var(--pv-border);
+
+    color:var(--pv-text);
+
+}
+
+.pv-button--secondary:hover:not(:disabled){
+
+    background:#fafafa;
+
+    border-color:var(--pv-primary);
+
+    color:var(--pv-primary);
+
+}
+
+.pv-button--success{
+
+    background:var(--pv-success);
+
+    color:#fff;
+
+}
+
+.pv-button--danger{
+
+    background:var(--pv-danger);
+
+    color:#fff;
+
+}
+
+.pv-button--warning{
+
+    background:var(--pv-warning);
+
+    color:#fff;
+
+}
+
+.pv-button--ghost{
+
+    background:transparent;
+
+    color:var(--pv-text-soft);
+
+}
+
+.pv-button--ghost:hover:not(:disabled){
+
+    background:var(--pv-primary-light);
+
+    color:var(--pv-primary);
+
+}
+
+/* ===========================
+   Width
+=========================== */
+
+.pv-button--full-width{
+
+    width:100%;
+
+}
+
+/* ===========================
+   Disabled
+=========================== */
+
+.pv-button:disabled{
+
+    opacity:.55;
+
+    cursor:not-allowed;
+
+    transform:none;
+
+    box-shadow:none;
+
+}
+
+/* ===========================
+   Ícones
+=========================== */
+
+.pv-button__icon{
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    line-height:1;
+
+}
+
+.pv-button__content{
+
+    display:flex;
+
+    align-items:center;
+
+}
+
+/* ===========================
+   Loading
+=========================== */
+
+.pv-button--loading{
+
+    cursor:wait;
+
+}
+
+.pv-button__spinner{
+
+    width:16px;
+
+    height:16px;
+
+    border-radius:50%;
+
+    border:2px solid rgba(255,255,255,.35);
+
+    border-top-color:#fff;
+
+    animation:pv-spin .7s linear infinite;
+
+}
+
+@keyframes pv-spin{
+
+    to{
+
+        transform:rotate(360deg);
+
+    }
+
+}
+
+/* ===========================
+   Focus
+=========================== */
+
+.pv-button:focus-visible{
+
+    outline:none;
+
+    box-shadow:
+        0 0 0 4px rgba(183,99,0,.20);
+
+}
+
+/* ===========================
+   Responsivo
+=========================== */
+
+@media (max-width:768px){
+
+    .pv-button--lg{
+
+        width:100%;
+
+    }
+
+}

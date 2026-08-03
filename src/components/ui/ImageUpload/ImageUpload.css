@@ -1,0 +1,326 @@
+.pv-image-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  width: 100%;
+  min-width: 0;
+}
+
+.pv-image-upload__label {
+  color: var(--admin-text, #172033);
+
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.pv-image-upload__input {
+  position: absolute;
+
+  width: 1px;
+  height: 1px;
+
+  overflow: hidden;
+
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* =========================================================
+   ÁREA DE ARRASTAR
+   ========================================================= */
+
+.pv-image-upload__dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  min-height: 210px;
+  padding: 26px;
+
+  border: 1.5px dashed var(--admin-border-strong, #d0d5dd);
+  border-radius: 16px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #ffffff,
+      var(--admin-surface-soft, #f8fafc)
+    );
+
+  color: var(--admin-text-soft, #667085);
+
+  text-align: center;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.pv-image-upload__dropzone:hover {
+  border-color: var(--admin-primary, #c87400);
+
+  background: var(--admin-primary-soft, #fff5e6);
+
+  box-shadow:
+    0 0 0 4px rgba(200, 116, 0, 0.08);
+
+  transform: translateY(-1px);
+}
+
+.pv-image-upload__dropzone:focus-visible {
+  outline: none;
+
+  border-color: var(--admin-primary, #c87400);
+
+  box-shadow:
+    0 0 0 4px rgba(200, 116, 0, 0.14);
+}
+
+.pv-image-upload__dropzone--active {
+  border-color: var(--admin-primary, #c87400);
+
+  background: var(--admin-primary-soft, #fff5e6);
+
+  box-shadow:
+    0 0 0 5px rgba(200, 116, 0, 0.1);
+
+  transform: scale(1.01);
+}
+
+.pv-image-upload__dropzone--error {
+  border-color: var(--admin-danger, #f04438);
+
+  background: #fef3f2;
+}
+
+.pv-image-upload__icon {
+  display: grid;
+  place-items: center;
+
+  width: 50px;
+  height: 50px;
+
+  border-radius: 15px;
+
+  background: var(--admin-primary-soft, #fff5e6);
+  color: var(--admin-primary, #c87400);
+
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.pv-image-upload__dropzone > strong {
+  color: var(--admin-text, #172033);
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pv-image-upload__dropzone > span:not(.pv-image-upload__icon) {
+  color: var(--admin-text-muted, #98a2b3);
+
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.pv-image-upload__dropzone > small {
+  color: var(--admin-text-muted, #98a2b3);
+
+  font-size: 9px;
+  font-weight: 600;
+}
+
+/* =========================================================
+   PRÉ-VISUALIZAÇÃO
+   ========================================================= */
+
+.pv-image-upload__preview {
+  display: grid;
+  grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
+  gap: 18px;
+
+  padding: 16px;
+
+  border: 1px solid var(--admin-border, #e4e7ec);
+  border-radius: 16px;
+
+  background: #ffffff;
+
+  box-shadow: var(--admin-shadow-sm);
+}
+
+.pv-image-upload__preview-image {
+  overflow: hidden;
+
+  min-height: 160px;
+
+  border: 1px solid var(--admin-border, #e4e7ec);
+  border-radius: 13px;
+
+  background: var(--admin-surface-soft, #f8fafc);
+}
+
+.pv-image-upload__preview-image img {
+  display: block;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+}
+
+.pv-image-upload__preview-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 7px;
+
+  min-width: 0;
+}
+
+.pv-image-upload__success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 27px;
+  padding: 0 10px;
+
+  border-radius: 999px;
+
+  background: #ecfdf3;
+  color: #027a48;
+
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.pv-image-upload__preview-content > strong {
+  overflow: hidden;
+
+  max-width: 100%;
+
+  color: var(--admin-text, #172033);
+
+  font-size: 13px;
+  font-weight: 800;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pv-image-upload__preview-content > small {
+  color: var(--admin-text-soft, #667085);
+
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.pv-image-upload__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  margin-top: 8px;
+}
+
+.pv-image-upload__remove.pv-button {
+  color: var(--admin-danger, #f04438);
+}
+
+.pv-image-upload__remove.pv-button:hover:not(:disabled) {
+  background: #fef3f2;
+  color: #b42318;
+}
+
+/* =========================================================
+   MENSAGENS
+   ========================================================= */
+
+.pv-image-upload__helper,
+.pv-image-upload__error {
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.pv-image-upload__helper {
+  color: var(--admin-text-soft, #667085);
+}
+
+.pv-image-upload__error {
+  color: var(--admin-danger, #f04438);
+}
+
+/* =========================================================
+   DESABILITADO
+   ========================================================= */
+
+.pv-image-upload--disabled {
+  opacity: 0.62;
+}
+
+.pv-image-upload--disabled .pv-image-upload__dropzone {
+  cursor: not-allowed;
+  transform: none;
+}
+
+.pv-image-upload--disabled .pv-image-upload__preview {
+  background: #f2f4f7;
+}
+
+/* =========================================================
+   RESPONSIVIDADE
+   ========================================================= */
+
+@media (max-width: 720px) {
+  .pv-image-upload__dropzone {
+    min-height: 190px;
+    padding: 22px 18px;
+  }
+
+  .pv-image-upload__preview {
+    grid-template-columns: 1fr;
+  }
+
+  .pv-image-upload__preview-image {
+    min-height: 220px;
+  }
+
+  .pv-image-upload__actions {
+    width: 100%;
+  }
+
+  .pv-image-upload__actions .pv-button {
+    flex: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .pv-image-upload__preview-image {
+    min-height: 180px;
+  }
+
+  .pv-image-upload__actions {
+    flex-direction: column;
+  }
+
+  .pv-image-upload__actions .pv-button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pv-image-upload__dropzone {
+    transition: none;
+  }
+}
