@@ -1,3 +1,7 @@
+import {
+  excluirImagem,
+} from "../../../services/storageService";
+
 import { useEffect, useState } from "react";
 
 import Button from "../../ui/Button";
@@ -205,13 +209,34 @@ function ProductForm({
     }
   }
 
-  function handleCancel() {
-    setErrors({});
+  async function handleCancel() {
+  setErrors({});
 
-    if (typeof onCancel === "function") {
-      onCancel();
+  const imagemAtual =
+    formData.imagem?.trim() || "";
+
+  const imagemOriginal =
+    initialData?.imagem?.trim() || "";
+
+  const imagemNovaNaoSalva =
+    imagemAtual &&
+    imagemAtual !== imagemOriginal;
+
+  if (imagemNovaNaoSalva) {
+    try {
+      await excluirImagem(imagemAtual);
+    } catch (erroImagem) {
+      console.error(
+        "Não foi possível excluir a imagem não utilizada:",
+        erroImagem,
+      );
     }
   }
+
+  if (typeof onCancel === "function") {
+    onCancel();
+  }
+}
 
   const estoqueControlado =
     formData.estoque !== "";

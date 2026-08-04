@@ -1,6 +1,15 @@
-import { useId, useRef, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
 
 import Button from "../Button";
+
+import {
+  uploadImagem,
+} from "../../../services/storageService";
 
 import "./ImageUpload.css";
 
@@ -33,12 +42,40 @@ function ImageUpload({
   const inputId = useId();
   const inputRef = useRef(null);
 
-  const [arrastando, setArrastando] = useState(false);
-  const [erroInterno, setErroInterno] = useState("");
-  const [nomeArquivo, setNomeArquivo] = useState("");
-  const [tamanhoArquivo, setTamanhoArquivo] = useState("");
+  const [arrastando, setArrastando] =
+    useState(false);
 
-  const mensagemErro = error || erroInterno;
+  const [erroInterno, setErroInterno] =
+    useState("");
+
+  const [nomeArquivo, setNomeArquivo] =
+    useState("");
+
+  const [tamanhoArquivo, setTamanhoArquivo] =
+    useState("");
+
+  const [enviandoImagem, setEnviandoImagem] =
+    useState(false);
+
+  const [previewLocal, setPreviewLocal] =
+    useState("");
+
+  const bloqueado =
+    disabled || enviandoImagem;
+
+  const mensagemErro =
+    error || erroInterno;
+
+  const imagemExibida =
+    previewLocal || value;
+
+  useEffect(() => {
+    return () => {
+      if (previewLocal) {
+        URL.revokeObjectURL(previewLocal);
+      }
+    };
+  }, [previewLocal]);
 
   function emitirAlteracao(novoValor) {
     if (typeof onChange === "function") {
@@ -62,41 +99,71 @@ function ImageUpload({
     return "";
   }
 
-  function processarArquivo(arquivo) {
-    if (disabled) {
+  async function processarArquivo(arquivo) {
+    if (bloqueado) {
       return;
     }
 
-    const erroValidacao = validarArquivo(arquivo);
+    const erroValidacao =
+      validarArquivo(arquivo);
 
     if (erroValidacao) {
       setErroInterno(erroValidacao);
       return;
     }
 
-    const leitor = new FileReader();
+    const novaPreview =
+      URL.createObjectURL(arquivo);
 
-    leitor.onload = () => {
-      const resultado = String(leitor.result || "");
+    if (previewLocal) {
+      URL.revokeObjectURL(previewLocal);
+    }
 
-      setErroInterno("");
-      setNomeArquivo(arquivo.name);
-      setTamanhoArquivo(formatarTamanho(arquivo.size));
+    setPreviewLocal(novaPreview);
+    setErroInterno("");
+    setNomeArquivo(arquivo.name);
+    setTamanhoArquivo(
+      formatarTamanho(arquivo.size),
+    );
+    setEnviandoImagem(true);
 
-      emitirAlteracao(resultado);
-    };
+    try {
+      const urlPublica =
+        await uploadImagem(arquivo);
 
-    leitor.onerror = () => {
-      setErroInterno(
-        "Não foi possível carregar a imagem selecionada.",
+      if (!urlPublica) {
+        throw new Error(
+          "O endereço da imagem não foi gerado.",
+        );
+      }
+
+      emitirAlteracao(urlPublica);
+
+      URL.revokeObjectURL(novaPreview);
+      setPreviewLocal("");
+    } catch (erroUpload) {
+      console.error(
+        "Erro ao enviar imagem:",
+        erroUpload,
       );
-    };
 
-    leitor.readAsDataURL(arquivo);
+      setErroInterno(
+        erroUpload?.message ||
+          "Não foi possível enviar a imagem.",
+      );
+
+      URL.revokeObjectURL(novaPreview);
+      setPreviewLocal("");
+      setNomeArquivo("");
+      setTamanhoArquivo("");
+    } finally {
+      setEnviandoImagem(false);
+    }
   }
 
   function selecionarArquivo(event) {
-    const arquivo = event.target.files?.[0];
+    const arquivo =
+      event.target.files?.[0];
 
     processarArquivo(arquivo);
 
@@ -104,7 +171,7 @@ function ImageUpload({
   }
 
   function abrirSeletor() {
-    if (disabled) {
+    if (bloqueado) {
       return;
     }
 
@@ -114,7 +181,7 @@ function ImageUpload({
   function aoArrastarSobre(event) {
     event.preventDefault();
 
-    if (!disabled) {
+    if (!bloqueado) {
       setArrastando(true);
     }
   }
@@ -130,23 +197,29 @@ function ImageUpload({
 
     setArrastando(false);
 
-    if (disabled) {
+    if (bloqueado) {
       return;
     }
 
-    const arquivo = event.dataTransfer.files?.[0];
+    const arquivo =
+      event.dataTransfer.files?.[0];
 
     processarArquivo(arquivo);
   }
 
   function removerImagem() {
-    if (disabled) {
+    if (bloqueado) {
       return;
+    }
+
+    if (previewLocal) {
+      URL.revokeObjectURL(previewLocal);
     }
 
     setErroInterno("");
     setNomeArquivo("");
     setTamanhoArquivo("");
+    setPreviewLocal("");
 
     emitirAlteracao("");
   }
@@ -164,7 +237,7 @@ function ImageUpload({
   return (
     <div
       className={`pv-image-upload ${
-        disabled
+        bloqueado
           ? "pv-image-upload--disabled"
           : ""
       }`}
@@ -184,26 +257,29 @@ function ImageUpload({
         type="file"
         accept=".png,.jpg,.jpeg,.webp,image/png,image/jpeg,image/webp"
         className="pv-image-upload__input"
-        disabled={disabled}
+        disabled={bloqueado}
         onChange={selecionarArquivo}
       />
 
-      {value ? (
+      {imagemExibida ? (
         <div className="pv-image-upload__preview">
           <div className="pv-image-upload__preview-image">
             <img
-              src={value}
+              src={imagemExibida}
               alt="Pré-visualização da imagem selecionada"
             />
           </div>
 
           <div className="pv-image-upload__preview-content">
             <span className="pv-image-upload__success">
-              Imagem carregada
+              {enviandoImagem
+                ? "Enviando imagem..."
+                : "Imagem carregada"}
             </span>
 
             <strong>
-              {nomeArquivo || "Imagem do produto"}
+              {nomeArquivo ||
+                "Imagem do produto"}
             </strong>
 
             {tamanhoArquivo && (
@@ -215,7 +291,7 @@ function ImageUpload({
                 type="button"
                 variant="secondary"
                 size="sm"
-                disabled={disabled}
+                disabled={bloqueado}
                 onClick={abrirSeletor}
               >
                 Trocar imagem
@@ -225,7 +301,7 @@ function ImageUpload({
                 type="button"
                 variant="ghost"
                 size="sm"
-                disabled={disabled}
+                disabled={bloqueado}
                 className="pv-image-upload__remove"
                 onClick={removerImagem}
               >
@@ -246,8 +322,8 @@ function ImageUpload({
               : ""
           }`}
           role="button"
-          tabIndex={disabled ? -1 : 0}
-          aria-disabled={disabled}
+          tabIndex={bloqueado ? -1 : 0}
+          aria-disabled={bloqueado}
           onClick={abrirSeletor}
           onKeyDown={aoPressionarTecla}
           onDragEnter={aoArrastarSobre}
@@ -263,27 +339,33 @@ function ImageUpload({
           </span>
 
           <strong>
-            Arraste uma imagem aqui
+            {enviandoImagem
+              ? "Enviando imagem..."
+              : "Arraste uma imagem aqui"}
           </strong>
 
-          <span>ou</span>
+          {!enviandoImagem && (
+            <>
+              <span>ou</span>
 
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            disabled={disabled}
-            onClick={(event) => {
-              event.stopPropagation();
-              abrirSeletor();
-            }}
-          >
-            Selecionar arquivo
-          </Button>
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                disabled={bloqueado}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  abrirSeletor();
+                }}
+              >
+                Selecionar arquivo
+              </Button>
 
-          <small>
-            PNG, JPG, JPEG ou WEBP
-          </small>
+              <small>
+                PNG, JPG, JPEG ou WEBP
+              </small>
+            </>
+          )}
         </div>
       )}
 
@@ -294,7 +376,9 @@ function ImageUpload({
       ) : (
         helperText && (
           <span className="pv-image-upload__helper">
-            {helperText}
+            {enviandoImagem
+              ? "Aguarde o envio terminar antes de salvar o produto."
+              : helperText}
           </span>
         )
       )}

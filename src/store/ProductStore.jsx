@@ -15,6 +15,10 @@ import {
   excluirProdutoBanco,
 } from "../services/produtoService";
 
+import {
+  excluirImagem,
+} from "../services/storageService";
+
 export const ProductContext = createContext(null);
 
 function criarSlug(texto = "") {
@@ -244,6 +248,24 @@ export function ProductProvider({
           produtoPreparado,
         );
 
+      const imagemFoiAlterada =
+        Boolean(produtoAtual.imagem) &&
+        produtoAtual.imagem !==
+          produtoAtualizado.imagem;
+
+      if (imagemFoiAlterada) {
+        try {
+          await excluirImagem(
+            produtoAtual.imagem,
+          );
+        } catch (erroImagem) {
+          console.error(
+            "Produto atualizado, mas não foi possível excluir a imagem antiga:",
+            erroImagem,
+          );
+        }
+      }
+
       setProdutos((produtosAtuais) =>
         produtosAtuais.map((produto) =>
           String(produto.id) ===
@@ -259,21 +281,66 @@ export function ProductProvider({
   );
 
   const excluirProduto = useCallback(
-    async (id) => {
-      await excluirProdutoBanco(id);
+  async (id) => {
+    const produtoAtual = produtos.find(
+      (produto) =>
+        String(produto.id) === String(id),
+    );
 
-      setProdutos((produtosAtuais) =>
-        produtosAtuais.filter(
-          (produto) =>
-            String(produto.id) !==
-            String(id),
-        ),
+    if (!produtoAtual) {
+      throw new Error(
+        "Produto não encontrado para exclusão.",
+      );
+    }
+
+    const imagemDoProduto =
+      produtoAtual.imagem?.trim() || "";
+
+    const imagemUsadaPorOutroProduto =
+      imagemDoProduto &&
+      produtos.some(
+        (produto) =>
+          String(produto.id) !== String(id) &&
+          produto.imagem === imagemDoProduto,
       );
 
-      return true;
-    },
-    [],
-  );
+    await excluirProdutoBanco(id);
+
+    if (
+      imagemDoProduto &&
+      !imagemUsadaPorOutroProduto
+    ) {
+      try {
+        const imagemExcluida =
+          await excluirImagem(
+            imagemDoProduto,
+          );
+
+        console.log(
+          "Imagem excluída do Storage:",
+          imagemExcluida,
+          imagemDoProduto,
+        );
+      } catch (erroImagem) {
+        console.error(
+          "Produto excluído do banco, mas a imagem permaneceu no Storage:",
+          erroImagem,
+          imagemDoProduto,
+        );
+      }
+    }
+
+    setProdutos((produtosAtuais) =>
+      produtosAtuais.filter(
+        (produto) =>
+          String(produto.id) !== String(id),
+      ),
+    );
+
+    return true;
+  },
+  [produtos],
+);
 
   const duplicarProduto = useCallback(
     async (id) => {
