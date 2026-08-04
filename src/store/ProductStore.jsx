@@ -8,9 +8,14 @@ import {
 
 import produtosIniciais from "../data/produtos";
 
-export const ProductContext = createContext(null);
+import {
+  listarProdutos,
+  criarProduto,
+  atualizarProdutoBanco,
+  excluirProdutoBanco,
+} from "../services/produtoService";
 
-const STORAGE_KEY = "pv-catalog-pro-produtos";
+export const ProductContext = createContext(null);
 
 function criarSlug(texto = "") {
   return texto
@@ -24,311 +29,524 @@ function criarSlug(texto = "") {
     .replace(/-+/g, "-");
 }
 
-function gerarId(produtosAtuais) {
-  const maiorId = produtosAtuais.reduce((maior, produto) => {
-    const idNumerico = Number(produto.id);
+function normalizarProduto(
+  produto,
+  produtosAtuais = [],
+) {
+  const nome =
+    produto.nome?.trim() ||
+    "Produto sem nome";
 
-    if (!Number.isFinite(idNumerico)) {
-      return maior;
-    }
+  const slugBase =
+    criarSlug(produto.slug || nome) ||
+    `produto-${Date.now()}`;
 
-    return Math.max(maior, idNumerico);
-  }, 0);
-
-  return maiorId + 1;
-}
-
-function normalizarProduto(produto, produtosAtuais = []) {
-  const nome = produto.nome?.trim() || "Produto sem nome";
-
-  const slugBase = criarSlug(produto.slug || nome) || `produto-${Date.now()}`;
-
-  const produtoComMesmoSlug = produtosAtuais.find(
-    (item) =>
-      item.slug === slugBase && String(item.id) !== String(produto.id),
-  );
+  const produtoComMesmoSlug =
+    produtosAtuais.find(
+      (item) =>
+        item.slug === slugBase &&
+        String(item.id) !==
+          String(produto.id),
+    );
 
   const slug = produtoComMesmoSlug
-    ? `${slugBase}-${produto.id || Date.now()}`
+    ? `${slugBase}-${Date.now()}`
     : slugBase;
 
-  const precoNumerico = Number(produto.preco);
+  const precoNumerico =
+    Number(produto.preco);
 
   return {
     id: produto.id,
     slug,
     nome,
 
-    categoria: produto.categoria?.trim() || "SEM CATEGORIA",
-    subcategoria: produto.subcategoria?.trim() || "",
+    categoria:
+      produto.categoria?.trim() ||
+      "SEM CATEGORIA",
 
-    descricao: produto.descricao?.trim() || "",
+    subcategoria:
+      produto.subcategoria?.trim() ||
+      "",
 
-    paraQueServe: produto.paraQueServe?.trim() || "",
+    descricao:
+      produto.descricao?.trim() ||
+      "",
 
-    comoUsar: produto.comoUsar?.trim() || "",
+    paraQueServe:
+      produto.paraQueServe?.trim() ||
+      "",
+
+    comoUsar:
+      produto.comoUsar?.trim() ||
+      "",
 
     informacoesAdicionais:
-      produto.informacoesAdicionais?.trim() || "",
+      produto.informacoesAdicionais?.trim() ||
+      "",
 
-    imagem: produto.imagem || "",
+    imagem:
+      produto.imagem || "",
 
-    preco: Number.isFinite(precoNumerico) ? precoNumerico : 0,
+    preco:
+      Number.isFinite(precoNumerico)
+        ? precoNumerico
+        : 0,
 
-    disponivel: Boolean(produto.disponivel),
-    destaque: Boolean(produto.destaque),
-    novo: Boolean(produto.novo),
+    disponivel:
+      Boolean(produto.disponivel),
+
+    destaque:
+      Boolean(produto.destaque),
+
+    novo:
+      Boolean(produto.novo),
 
     estoque:
       produto.estoque === "" ||
       produto.estoque === null ||
       produto.estoque === undefined
         ? null
-        : Math.max(0, Number(produto.estoque) || 0),
+        : Math.max(
+            0,
+            Number(produto.estoque) || 0,
+          ),
 
-    marca: produto.marca?.trim() || "",
-    laboratorio: produto.laboratorio?.trim() || "",
-    sku: produto.sku?.trim() || "",
+    marca:
+      produto.marca?.trim() ||
+      "",
 
-    ativo: produto.ativo !== false,
+    laboratorio:
+      produto.laboratorio?.trim() ||
+      "",
 
-    criadoEm: produto.criadoEm || new Date().toISOString(),
-    atualizadoEm: new Date().toISOString(),
+    sku:
+      produto.sku?.trim() ||
+      "",
+
+    ativo:
+      produto.ativo !== false,
+
+    criadoEm:
+      produto.criadoEm ||
+      new Date().toISOString(),
+
+    atualizadoEm:
+      produto.atualizadoEm ||
+      new Date().toISOString(),
   };
 }
 
-function carregarProdutosIniciais() {
-  try {
-    const produtosSalvos = localStorage.getItem(STORAGE_KEY);
+export function ProductProvider({
+  children,
+}) {
+  const [produtos, setProdutos] =
+    useState([]);
 
-    if (!produtosSalvos) {
-      return produtosIniciais.map((produto) =>
-        normalizarProduto(produto, produtosIniciais),
-      );
-    }
+  const [
+    carregandoProdutos,
+    setCarregandoProdutos,
+  ] = useState(true);
 
-    const produtosConvertidos = JSON.parse(produtosSalvos);
+  const [erroProdutos, setErroProdutos] =
+    useState("");
 
-    if (!Array.isArray(produtosConvertidos)) {
-      throw new Error("Os produtos salvos não possuem um formato válido.");
-    }
+  const carregarProdutos =
+    useCallback(async () => {
+      try {
+        setCarregandoProdutos(true);
+        setErroProdutos("");
 
-    return produtosConvertidos.map((produto) =>
-      normalizarProduto(produto, produtosConvertidos),
-    );
-  } catch (erro) {
-    console.error(
-      "Não foi possível carregar os produtos salvos:",
-      erro,
-    );
+        const produtosDoBanco =
+          await listarProdutos();
 
-    return produtosIniciais.map((produto) =>
-      normalizarProduto(produto, produtosIniciais),
-    );
-  }
-}
-
-export function ProductProvider({ children }) {
-  const [produtos, setProdutos] = useState(carregarProdutosIniciais);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(produtos));
-    } catch (erro) {
-      console.error(
-        "Não foi possível salvar os produtos no navegador:",
-        erro,
-      );
-    }
-  }, [produtos]);
-
-  const adicionarProduto = useCallback((dadosProduto) => {
-    let produtoCriado = null;
-
-    setProdutos((produtosAtuais) => {
-      const novoId = gerarId(produtosAtuais);
-
-      produtoCriado = normalizarProduto(
-        {
-          ...dadosProduto,
-          id: novoId,
-          criadoEm: new Date().toISOString(),
-        },
-        produtosAtuais,
-      );
-
-      return [...produtosAtuais, produtoCriado];
-    });
-
-    return produtoCriado;
-  }, []);
-
-  const atualizarProduto = useCallback((id, novosDados) => {
-    let produtoAtualizado = null;
-
-    setProdutos((produtosAtuais) =>
-      produtosAtuais.map((produto) => {
-        if (String(produto.id) !== String(id)) {
-          return produto;
-        }
-
-        produtoAtualizado = normalizarProduto(
-          {
-            ...produto,
-            ...novosDados,
-            id: produto.id,
-            criadoEm: produto.criadoEm,
-          },
-          produtosAtuais,
+        setProdutos(produtosDoBanco);
+      } catch (erro) {
+        console.error(
+          "Não foi possível carregar os produtos do Supabase:",
+          erro,
         );
 
-        return produtoAtualizado;
-      }),
-    );
+        setErroProdutos(
+          erro.message ||
+            "Não foi possível carregar os produtos.",
+        );
+      } finally {
+        setCarregandoProdutos(false);
+      }
+    }, []);
 
-    return produtoAtualizado;
-  }, []);
+  useEffect(() => {
+    carregarProdutos();
+  }, [carregarProdutos]);
 
-  const excluirProduto = useCallback((id) => {
-    setProdutos((produtosAtuais) =>
-      produtosAtuais.filter(
-        (produto) => String(produto.id) !== String(id),
-      ),
-    );
-  }, []);
+  const adicionarProduto = useCallback(
+    async (dadosProduto) => {
+      const produtoPreparado =
+        normalizarProduto(
+          {
+            ...dadosProduto,
+            criadoEm:
+              new Date().toISOString(),
+            atualizadoEm:
+              new Date().toISOString(),
+          },
+          produtos,
+        );
 
-  const duplicarProduto = useCallback((id) => {
-    let produtoDuplicado = null;
+      const produtoCriado =
+        await criarProduto(
+          produtoPreparado,
+        );
 
-    setProdutos((produtosAtuais) => {
-      const produtoOriginal = produtosAtuais.find(
-        (produto) => String(produto.id) === String(id),
-      );
+      setProdutos((produtosAtuais) => [
+        ...produtosAtuais,
+        produtoCriado,
+      ]);
 
-      if (!produtoOriginal) {
-        return produtosAtuais;
+      return produtoCriado;
+    },
+    [produtos],
+  );
+
+  const atualizarProduto = useCallback(
+    async (id, novosDados) => {
+      const produtoAtual =
+        produtos.find(
+          (produto) =>
+            String(produto.id) ===
+            String(id),
+        );
+
+      if (!produtoAtual) {
+        throw new Error(
+          "Produto não encontrado.",
+        );
       }
 
-      const novoId = gerarId(produtosAtuais);
+      const produtoPreparado =
+        normalizarProduto(
+          {
+            ...produtoAtual,
+            ...novosDados,
+            id: produtoAtual.id,
+            criadoEm:
+              produtoAtual.criadoEm,
+            atualizadoEm:
+              new Date().toISOString(),
+          },
+          produtos,
+        );
 
-      produtoDuplicado = normalizarProduto(
-        {
-          ...produtoOriginal,
-          id: novoId,
-          nome: `${produtoOriginal.nome} - Cópia`,
-          slug: `${produtoOriginal.slug}-copia-${novoId}`,
-          destaque: false,
-          novo: false,
-          criadoEm: new Date().toISOString(),
-        },
-        produtosAtuais,
+      const produtoAtualizado =
+        await atualizarProdutoBanco(
+          id,
+          produtoPreparado,
+        );
+
+      setProdutos((produtosAtuais) =>
+        produtosAtuais.map((produto) =>
+          String(produto.id) ===
+          String(id)
+            ? produtoAtualizado
+            : produto,
+        ),
       );
 
-      return [...produtosAtuais, produtoDuplicado];
-    });
-
-    return produtoDuplicado;
-  }, []);
-
-  const alternarDisponibilidade = useCallback((id) => {
-    setProdutos((produtosAtuais) =>
-      produtosAtuais.map((produto) =>
-        String(produto.id) === String(id)
-          ? {
-              ...produto,
-              disponivel: !produto.disponivel,
-              atualizadoEm: new Date().toISOString(),
-            }
-          : produto,
-      ),
-    );
-  }, []);
-
-  const alternarDestaque = useCallback((id) => {
-    setProdutos((produtosAtuais) =>
-      produtosAtuais.map((produto) =>
-        String(produto.id) === String(id)
-          ? {
-              ...produto,
-              destaque: !produto.destaque,
-              atualizadoEm: new Date().toISOString(),
-            }
-          : produto,
-      ),
-    );
-  }, []);
-
-  const alternarNovo = useCallback((id) => {
-    setProdutos((produtosAtuais) =>
-      produtosAtuais.map((produto) =>
-        String(produto.id) === String(id)
-          ? {
-              ...produto,
-              novo: !produto.novo,
-              atualizadoEm: new Date().toISOString(),
-            }
-          : produto,
-      ),
-    );
-  }, []);
-
-  const buscarProdutoPorId = useCallback(
-    (id) =>
-      produtos.find(
-        (produto) => String(produto.id) === String(id),
-      ) || null,
+      return produtoAtualizado;
+    },
     [produtos],
   );
 
-  const buscarProdutoPorSlug = useCallback(
-    (slug) =>
-      produtos.find((produto) => produto.slug === slug) || null,
+  const excluirProduto = useCallback(
+    async (id) => {
+      await excluirProdutoBanco(id);
+
+      setProdutos((produtosAtuais) =>
+        produtosAtuais.filter(
+          (produto) =>
+            String(produto.id) !==
+            String(id),
+        ),
+      );
+
+      return true;
+    },
+    [],
+  );
+
+  const duplicarProduto = useCallback(
+    async (id) => {
+      const produtoOriginal =
+        produtos.find(
+          (produto) =>
+            String(produto.id) ===
+            String(id),
+        );
+
+      if (!produtoOriginal) {
+        throw new Error(
+          "Produto original não encontrado.",
+        );
+      }
+
+      const produtoDuplicado =
+        normalizarProduto(
+          {
+            ...produtoOriginal,
+
+            id: undefined,
+
+            nome:
+              `${produtoOriginal.nome} - Cópia`,
+
+            slug:
+              `${produtoOriginal.slug}-copia-${Date.now()}`,
+
+            destaque: false,
+            novo: false,
+
+            criadoEm:
+              new Date().toISOString(),
+
+            atualizadoEm:
+              new Date().toISOString(),
+          },
+          produtos,
+        );
+
+      const produtoCriado =
+        await criarProduto(
+          produtoDuplicado,
+        );
+
+      setProdutos((produtosAtuais) => [
+        ...produtosAtuais,
+        produtoCriado,
+      ]);
+
+      return produtoCriado;
+    },
     [produtos],
   );
 
-  const restaurarProdutosIniciais = useCallback(() => {
-    const produtosRestaurados = produtosIniciais.map((produto) =>
-      normalizarProduto(produto, produtosIniciais),
+  const alternarDisponibilidade =
+    useCallback(
+      async (id) => {
+        const produtoAtual =
+          produtos.find(
+            (produto) =>
+              String(produto.id) ===
+              String(id),
+          );
+
+        if (!produtoAtual) {
+          throw new Error(
+            "Produto não encontrado.",
+          );
+        }
+
+        return atualizarProduto(
+          id,
+          {
+            disponivel:
+              !produtoAtual.disponivel,
+          },
+        );
+      },
+      [produtos, atualizarProduto],
     );
 
-    setProdutos(produtosRestaurados);
-  }, []);
+  const alternarDestaque =
+    useCallback(
+      async (id) => {
+        const produtoAtual =
+          produtos.find(
+            (produto) =>
+              String(produto.id) ===
+              String(id),
+          );
+
+        if (!produtoAtual) {
+          throw new Error(
+            "Produto não encontrado.",
+          );
+        }
+
+        return atualizarProduto(
+          id,
+          {
+            destaque:
+              !produtoAtual.destaque,
+          },
+        );
+      },
+      [produtos, atualizarProduto],
+    );
+
+  const alternarNovo =
+    useCallback(
+      async (id) => {
+        const produtoAtual =
+          produtos.find(
+            (produto) =>
+              String(produto.id) ===
+              String(id),
+          );
+
+        if (!produtoAtual) {
+          throw new Error(
+            "Produto não encontrado.",
+          );
+        }
+
+        return atualizarProduto(
+          id,
+          {
+            novo:
+              !produtoAtual.novo,
+          },
+        );
+      },
+      [produtos, atualizarProduto],
+    );
+
+  const buscarProdutoPorId =
+    useCallback(
+      (id) =>
+        produtos.find(
+          (produto) =>
+            String(produto.id) ===
+            String(id),
+        ) || null,
+      [produtos],
+    );
+
+  const buscarProdutoPorSlug =
+    useCallback(
+      (slug) =>
+        produtos.find(
+          (produto) =>
+            produto.slug === slug,
+        ) || null,
+      [produtos],
+    );
+
+  const restaurarProdutosIniciais =
+    useCallback(async () => {
+      const confirmar =
+        window.confirm(
+          "Deseja substituir os produtos atuais pelos produtos iniciais?",
+        );
+
+      if (!confirmar) {
+        return false;
+      }
+
+      for (const produto of produtos) {
+        await excluirProdutoBanco(
+          produto.id,
+        );
+      }
+
+      const produtosRestaurados = [];
+
+      for (
+        const produtoInicial
+        of produtosIniciais
+      ) {
+        const produtoPreparado =
+          normalizarProduto(
+            {
+              ...produtoInicial,
+
+              id: undefined,
+
+              criadoEm:
+                new Date().toISOString(),
+
+              atualizadoEm:
+                new Date().toISOString(),
+            },
+            produtosRestaurados,
+          );
+
+        const produtoCriado =
+          await criarProduto(
+            produtoPreparado,
+          );
+
+        produtosRestaurados.push(
+          produtoCriado,
+        );
+      }
+
+      setProdutos(
+        produtosRestaurados,
+      );
+
+      return true;
+    }, [produtos]);
 
   const categorias = useMemo(() => {
-    return [...new Set(
-      produtos
-        .map((produto) => produto.categoria)
-        .filter(Boolean),
-    )].sort((categoriaA, categoriaB) =>
-      categoriaA.localeCompare(categoriaB, "pt-BR"),
+    return [
+      ...new Set(
+        produtos
+          .map(
+            (produto) =>
+              produto.categoria,
+          )
+          .filter(Boolean),
+      ),
+    ].sort(
+      (
+        categoriaA,
+        categoriaB,
+      ) =>
+        categoriaA.localeCompare(
+          categoriaB,
+          "pt-BR",
+        ),
     );
   }, [produtos]);
 
   const indicadores = useMemo(() => {
-    const produtosAtivos = produtos.filter(
-      (produto) => produto.ativo !== false,
-    );
+    const produtosAtivos =
+      produtos.filter(
+        (produto) =>
+          produto.ativo !== false,
+      );
 
     return {
-      total: produtosAtivos.length,
+      total:
+        produtosAtivos.length,
 
-      disponiveis: produtosAtivos.filter(
-        (produto) => produto.disponivel,
-      ).length,
+      disponiveis:
+        produtosAtivos.filter(
+          (produto) =>
+            produto.disponivel,
+        ).length,
 
-      esgotados: produtosAtivos.filter(
-        (produto) => !produto.disponivel,
-      ).length,
+      esgotados:
+        produtosAtivos.filter(
+          (produto) =>
+            !produto.disponivel,
+        ).length,
 
-      destaques: produtosAtivos.filter(
-        (produto) => produto.destaque,
-      ).length,
+      destaques:
+        produtosAtivos.filter(
+          (produto) =>
+            produto.destaque,
+        ).length,
 
-      novos: produtosAtivos.filter(
-        (produto) => produto.novo,
-      ).length,
+      novos:
+        produtosAtivos.filter(
+          (produto) =>
+            produto.novo,
+        ).length,
 
-      categorias: categorias.length,
+      categorias:
+        categorias.length,
     };
   }, [produtos, categorias]);
 
@@ -337,6 +555,11 @@ export function ProductProvider({ children }) {
       produtos,
       categorias,
       indicadores,
+
+      carregandoProdutos,
+      erroProdutos,
+
+      carregarProdutos,
 
       adicionarProduto,
       atualizarProduto,
@@ -356,21 +579,32 @@ export function ProductProvider({ children }) {
       produtos,
       categorias,
       indicadores,
+
+      carregandoProdutos,
+      erroProdutos,
+
+      carregarProdutos,
+
       adicionarProduto,
       atualizarProduto,
       excluirProduto,
       duplicarProduto,
+
       alternarDisponibilidade,
       alternarDestaque,
       alternarNovo,
+
       buscarProdutoPorId,
       buscarProdutoPorSlug,
+
       restaurarProdutosIniciais,
     ],
   );
 
   return (
-    <ProductContext.Provider value={valor}>
+    <ProductContext.Provider
+      value={valor}
+    >
       {children}
     </ProductContext.Provider>
   );

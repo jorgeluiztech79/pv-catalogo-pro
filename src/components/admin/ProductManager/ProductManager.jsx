@@ -111,64 +111,141 @@ function ProductManager() {
     setFormularioAberto(false);
   }
 
-  function salvarProduto(dadosProduto) {
-    if (produtoEmEdicao) {
-      atualizarProduto(
-        produtoEmEdicao.id,
-        dadosProduto,
+  async function salvarProduto(
+    dadosProduto,
+  ) {
+    try {
+      if (produtoEmEdicao) {
+        const produtoAtualizado =
+          await atualizarProduto(
+            produtoEmEdicao.id,
+            dadosProduto,
+          );
+
+        if (!produtoAtualizado) {
+          throw new Error(
+            "O produto não foi atualizado.",
+          );
+        }
+
+        mostrarMensagem(
+          "Produto atualizado com sucesso.",
+        );
+      } else {
+        const produtoCriado =
+          await adicionarProduto({
+            ...dadosProduto,
+            destaque: false,
+            novo: true,
+            ativo: true,
+          });
+
+        if (!produtoCriado) {
+          throw new Error(
+            "O produto não foi cadastrado.",
+          );
+        }
+
+        mostrarMensagem(
+          "Produto cadastrado com sucesso.",
+        );
+      }
+
+      fecharFormulario();
+    } catch (erro) {
+      console.error(
+        "Erro ao salvar produto:",
+        erro,
       );
 
       mostrarMensagem(
-        "Produto atualizado com sucesso.",
-      );
-    } else {
-      adicionarProduto({
-        ...dadosProduto,
-        destaque: false,
-        novo: true,
-        ativo: true,
-      });
-
-      mostrarMensagem(
-        "Produto cadastrado com sucesso.",
+        erro.message ||
+          "Não foi possível salvar o produto.",
       );
     }
-
-    fecharFormulario();
   }
 
-  function removerProduto(produto) {
-    const confirmarExclusao = window.confirm(
-      `Deseja realmente excluir o produto "${produto.nome}"?`,
-    );
+  async function removerProduto(
+    produto,
+  ) {
+    const confirmarExclusao =
+      window.confirm(
+        `Deseja realmente excluir o produto "${produto.nome}"?`,
+      );
 
     if (!confirmarExclusao) {
       return;
     }
 
-    excluirProduto(produto.id);
+    try {
+      await excluirProduto(
+        produto.id,
+      );
 
-    mostrarMensagem(
-      "Produto excluído com sucesso.",
-    );
+      mostrarMensagem(
+        "Produto excluído com sucesso.",
+      );
+    } catch (erro) {
+      console.error(
+        "Erro ao excluir produto:",
+        erro,
+      );
+
+      mostrarMensagem(
+        erro.message ||
+          "Não foi possível excluir o produto.",
+      );
+    }
   }
 
-  function copiarProduto(produto) {
-    duplicarProduto(produto.id);
+  async function copiarProduto(
+    produto,
+  ) {
+    try {
+      await duplicarProduto(
+        produto.id,
+      );
 
-    mostrarMensagem(
-      "Produto duplicado com sucesso.",
-    );
+      mostrarMensagem(
+        "Produto duplicado com sucesso.",
+      );
+    } catch (erro) {
+      console.error(
+        "Erro ao duplicar produto:",
+        erro,
+      );
+
+      mostrarMensagem(
+        erro.message ||
+          "Não foi possível duplicar o produto.",
+      );
+    }
   }
 
-  function alterarDisponibilidade(produto) {
-    alternarDisponibilidade(produto.id);
+  async function alterarDisponibilidade(
+    produto,
+  ) {
+    try {
+      await alternarDisponibilidade(
+        produto.id,
+      );
 
-    mostrarMensagem(
-      produto.disponivel
-        ? "Produto marcado como esgotado."
-        : "Produto marcado como disponível.",
-    );
+      mostrarMensagem(
+        produto.disponivel
+          ? "Produto marcado como esgotado."
+          : "Produto marcado como disponível.",
+      );
+    } catch (erro) {
+      console.error(
+        "Erro ao alterar disponibilidade:",
+        erro,
+      );
+
+      mostrarMensagem(
+        erro.message ||
+          "Não foi possível alterar a disponibilidade.",
+      );
+    }
   }
 
   function limparFiltros() {
