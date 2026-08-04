@@ -20,3 +20,11 @@ export const supabase = createClient(
   supabaseUrl,
   supabasePublishableKey,
 );
+console.log("KEY COMPLETA:");
+console.log(supabasePublishableKey);
+
+console.log("PRIMEIROS 20:");
+console.log(supabasePublishableKey.slice(0, 20));
+
+console.log("ÚLTIMOS 20:");
+console.log(supabasePublishableKey.slice(-20));
