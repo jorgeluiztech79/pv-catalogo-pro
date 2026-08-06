@@ -1,34 +1,34 @@
 import heroImage from "../assets/hero.png";
-import logoPeptideosVip from "../assets/logo-peptideos-vip.png";
+const logoComunidadeMaromba = "/logo.png";
 
 const siteConfig = {
   empresa: {
-    nome: "Peptídeos VIP",
+    nome: "Comunidade Maromba",
 
-    logo: logoPeptideosVip,
+    logo: logoComunidadeMaromba,
 
-    whatsapp: "5521998898166",
+    whatsapp: "",
 
     email: "",
 
     instagram: "",
 
     descricao:
-      "Catálogo de produtos com atendimento personalizado pelo WhatsApp.",
+      "Catálogo oficial da Comunidade Maromba com atendimento personalizado pelo WhatsApp.",
   },
 
   hero: {
-    logo: logoPeptideosVip,
+    logo: logoComunidadeMaromba,
 
     imagem: heroImage,
 
     imagemAlt:
-      "Apresentação visual da linha de produtos Peptídeos VIP",
+      "Apresentação visual da Comunidade Maromba",
 
     tag: "Peptídeos Premium",
 
     titulo:
-      "Tecnologia, qualidade e atendimento especializado.",
+      "Produtos de qualidade com atendimento especializado.",
 
     descricao:
       "Conheça uma linha cuidadosamente selecionada, apresentada em um catálogo moderno, seguro e preparado para oferecer uma experiência de compra simples e profissional.",
@@ -161,18 +161,14 @@ const siteConfig = {
     locale: "pt-BR",
   },
 
-  /*
-   * Compatibilidade temporária com componentes que ainda
-   * utilizam a estrutura antiga.
-   */
-  nomeEmpresa: "Peptídeos VIP",
+  nomeEmpresa: "Comunidade Maromba",
 
-  whatsapp: "5521998898166",
+  whatsapp: "",
 
-  logo: logoPeptideosVip,
+  logo: logoComunidadeMaromba,
 
   descricaoEmpresa:
-    "Catálogo de produtos com atendimento personalizado pelo WhatsApp.",
+    "Catálogo oficial da Comunidade Maromba com atendimento personalizado pelo WhatsApp.",
 
   moeda: "BRL",
 
