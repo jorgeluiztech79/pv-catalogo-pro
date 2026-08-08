@@ -3,14 +3,23 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
 import siteConfigInicial from "../config/siteConfig";
 
+import {
+  carregarConfiguracaoLoja,
+  salvarConfiguracaoLoja,
+} from "./siteConfigService";
+
 export const SiteConfigContext = createContext(null);
 
 const STORAGE_KEY = "pv-catalog-pro-site-config";
+const CACHE_VERSION_KEY =
+  "pv-catalog-pro-site-config-version";
+const CACHE_VERSION = "2";
 
 function copiarConfiguracao(configuracao) {
   return {
@@ -145,6 +154,13 @@ function mesclarConfiguracaoSalva(
       categorias: {
         ...configuracaoInicial.catalogo?.categorias,
         ...configuracaoSalva?.catalogo?.categorias,
+
+        opcoes:
+          configuracaoSalva?.catalogo?.categorias
+            ?.opcoes ||
+          configuracaoInicial.catalogo?.categorias
+            ?.opcoes ||
+          [],
       },
 
       resultados: {
@@ -180,8 +196,26 @@ function mesclarConfiguracaoSalva(
   };
 }
 
-function carregarConfiguracaoInicial() {
+function carregarCacheLocal() {
   try {
+    const versaoSalva =
+      localStorage.getItem(CACHE_VERSION_KEY);
+
+    /*
+     * Remove automaticamente o cache antigo
+     * que ainda poderia conter Peptídeos VIP.
+     */
+    if (versaoSalva !== CACHE_VERSION) {
+      localStorage.removeItem(STORAGE_KEY);
+
+      localStorage.setItem(
+        CACHE_VERSION_KEY,
+        CACHE_VERSION,
+      );
+
+      return copiarConfiguracao(siteConfigInicial);
+    }
+
     const configuracaoSalva =
       localStorage.getItem(STORAGE_KEY);
 
@@ -198,7 +232,7 @@ function carregarConfiguracaoInicial() {
     );
   } catch (erro) {
     console.error(
-      "Não foi possível carregar as configurações da loja:",
+      "Não foi possível carregar o cache local:",
       erro,
     );
 
@@ -206,121 +240,319 @@ function carregarConfiguracaoInicial() {
   }
 }
 
+function salvarCacheLocal(configuracao) {
+  try {
+    localStorage.setItem(
+      CACHE_VERSION_KEY,
+      CACHE_VERSION,
+    );
+
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(configuracao),
+    );
+  } catch (erro) {
+    console.error(
+      "Não foi possível salvar o cache local:",
+      erro,
+    );
+  }
+}
+
 export function SiteConfigProvider({ children }) {
   const [siteConfig, setSiteConfig] = useState(
-    carregarConfiguracaoInicial,
+    carregarCacheLocal,
   );
 
+  const [
+    carregandoConfiguracoes,
+    setCarregandoConfiguracoes,
+  ] = useState(true);
+
+  const [erroConfiguracoes, setErroConfiguracoes] =
+    useState("");
+
+  const deveSalvarRef = useRef(false);
+
+  const ultimaConfiguracaoSalvaRef =
+    useRef("");
+
   useEffect(() => {
-    try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify(siteConfig),
-      );
-    } catch (erro) {
-      console.error(
-        "Não foi possível salvar as configurações da loja:",
-        erro,
-      );
+    let componenteAtivo = true;
+
+    async function carregarConfiguracoes() {
+      try {
+        setErroConfiguracoes("");
+
+        const configuracaoBanco =
+          await carregarConfiguracaoLoja();
+
+        if (!componenteAtivo) {
+          return;
+        }
+
+        if (configuracaoBanco) {
+          const configuracaoMesclada =
+            mesclarConfiguracaoSalva(
+              siteConfigInicial,
+              configuracaoBanco,
+            );
+
+          ultimaConfiguracaoSalvaRef.current =
+            JSON.stringify(
+              configuracaoMesclada,
+            );
+
+          setSiteConfig(
+            configuracaoMesclada,
+          );
+
+          salvarCacheLocal(
+            configuracaoMesclada,
+          );
+
+          return;
+        }
+
+        /*
+         * A tabela ainda está vazia.
+         * Mantém Comunidade Maromba como padrão.
+         * A primeira alteração feita no Admin
+         * será gravada no Supabase.
+         */
+        const configuracaoInicial =
+          copiarConfiguracao(
+            siteConfigInicial,
+          );
+
+        ultimaConfiguracaoSalvaRef.current =
+          JSON.stringify(
+            configuracaoInicial,
+          );
+
+        setSiteConfig(
+          configuracaoInicial,
+        );
+
+        salvarCacheLocal(
+          configuracaoInicial,
+        );
+      } catch (erro) {
+        console.error(
+          "Não foi possível carregar as configurações do Supabase:",
+          erro,
+        );
+
+        if (componenteAtivo) {
+          setErroConfiguracoes(
+            erro.message ||
+              "Não foi possível carregar as configurações da loja.",
+          );
+        }
+      } finally {
+        if (componenteAtivo) {
+          setCarregandoConfiguracoes(false);
+        }
+      }
     }
-  }, [siteConfig]);
+
+    carregarConfiguracoes();
+
+    return () => {
+      componenteAtivo = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    salvarCacheLocal(siteConfig);
+
+    if (
+      carregandoConfiguracoes ||
+      !deveSalvarRef.current
+    ) {
+      return undefined;
+    }
+
+    const configuracaoSerializada =
+      JSON.stringify(siteConfig);
+
+    if (
+      configuracaoSerializada ===
+      ultimaConfiguracaoSalvaRef.current
+    ) {
+      deveSalvarRef.current = false;
+
+      return undefined;
+    }
+
+    const temporizador =
+      window.setTimeout(
+        async () => {
+          try {
+            setErroConfiguracoes("");
+
+            await salvarConfiguracaoLoja(
+              siteConfig,
+            );
+
+            ultimaConfiguracaoSalvaRef.current =
+              configuracaoSerializada;
+
+            deveSalvarRef.current = false;
+
+            console.log(
+              "Configurações da loja salvas no Supabase.",
+            );
+          } catch (erro) {
+            console.error(
+              "Não foi possível salvar as configurações no Supabase:",
+              erro,
+            );
+
+            setErroConfiguracoes(
+              erro.message ||
+                "Não foi possível salvar as configurações da loja.",
+            );
+          }
+        },
+        500,
+      );
+
+    return () => {
+      window.clearTimeout(
+        temporizador,
+      );
+    };
+  }, [
+    siteConfig,
+    carregandoConfiguracoes,
+  ]);
 
   const atualizarEmpresa = useCallback(
     (novosDados) => {
-      setSiteConfig((configuracaoAtual) => ({
-        ...configuracaoAtual,
+      deveSalvarRef.current = true;
 
-        empresa: {
-          ...configuracaoAtual.empresa,
-          ...novosDados,
-        },
+      setSiteConfig(
+        (configuracaoAtual) => ({
+          ...configuracaoAtual,
 
-        nomeEmpresa:
-          novosDados.nome ??
-          configuracaoAtual.nomeEmpresa,
+          empresa: {
+            ...configuracaoAtual.empresa,
+            ...novosDados,
+          },
 
-        whatsapp:
-          novosDados.whatsapp ??
-          configuracaoAtual.whatsapp,
+          nomeEmpresa:
+            novosDados.nome ??
+            configuracaoAtual.nomeEmpresa,
 
-        logo:
-          novosDados.logo ??
-          configuracaoAtual.logo,
-      }));
+          whatsapp:
+            novosDados.whatsapp ??
+            configuracaoAtual.whatsapp,
+
+          logo:
+            novosDados.logo ??
+            configuracaoAtual.logo,
+        }),
+      );
     },
     [],
   );
 
   const atualizarHero = useCallback(
     (novosDados) => {
-      setSiteConfig((configuracaoAtual) => ({
-        ...configuracaoAtual,
+      deveSalvarRef.current = true;
 
-        hero: {
-          ...configuracaoAtual.hero,
-          ...novosDados,
+      setSiteConfig(
+        (configuracaoAtual) => ({
+          ...configuracaoAtual,
 
-          botaoPrincipal: {
-            ...configuracaoAtual.hero.botaoPrincipal,
-            ...novosDados.botaoPrincipal,
+          hero: {
+            ...configuracaoAtual.hero,
+            ...novosDados,
+
+            botaoPrincipal: {
+              ...configuracaoAtual.hero
+                ?.botaoPrincipal,
+              ...novosDados.botaoPrincipal,
+            },
+
+            botaoSecundario: {
+              ...configuracaoAtual.hero
+                ?.botaoSecundario,
+              ...novosDados.botaoSecundario,
+            },
+
+            cardFlutuante: {
+              ...configuracaoAtual.hero
+                ?.cardFlutuante,
+              ...novosDados.cardFlutuante,
+            },
+
+            destaques:
+              novosDados.destaques ??
+              configuracaoAtual.hero
+                ?.destaques ??
+              [],
           },
-
-          botaoSecundario: {
-            ...configuracaoAtual.hero.botaoSecundario,
-            ...novosDados.botaoSecundario,
-          },
-
-          cardFlutuante: {
-            ...configuracaoAtual.hero.cardFlutuante,
-            ...novosDados.cardFlutuante,
-          },
-
-          destaques:
-            novosDados.destaques ??
-            configuracaoAtual.hero.destaques,
-        },
-      }));
+        }),
+      );
     },
     [],
   );
 
   const atualizarCatalogo = useCallback(
     (novosDados) => {
-      setSiteConfig((configuracaoAtual) => ({
-        ...configuracaoAtual,
+      deveSalvarRef.current = true;
 
-        catalogo: {
-          ...configuracaoAtual.catalogo,
-          ...novosDados,
-        },
-      }));
+      setSiteConfig(
+        (configuracaoAtual) => ({
+          ...configuracaoAtual,
+
+          catalogo: {
+            ...configuracaoAtual.catalogo,
+            ...novosDados,
+          },
+        }),
+      );
     },
     [],
   );
 
   const atualizarTema = useCallback(
     (novosDados) => {
-      setSiteConfig((configuracaoAtual) => ({
-        ...configuracaoAtual,
+      deveSalvarRef.current = true;
 
-        tema: {
-          ...configuracaoAtual.tema,
-          ...novosDados,
-        },
-      }));
+      setSiteConfig(
+        (configuracaoAtual) => ({
+          ...configuracaoAtual,
+
+          tema: {
+            ...configuracaoAtual.tema,
+            ...novosDados,
+          },
+        }),
+      );
     },
     [],
   );
 
-  const restaurarConfiguracoes = useCallback(() => {
-    setSiteConfig(
-      copiarConfiguracao(siteConfigInicial),
-    );
-  }, []);
+  const restaurarConfiguracoes =
+    useCallback(() => {
+      deveSalvarRef.current = true;
+
+      setSiteConfig(
+        copiarConfiguracao(
+          siteConfigInicial,
+        ),
+      );
+    }, []);
 
   const valor = useMemo(
     () => ({
       siteConfig,
+
+      carregandoConfiguracoes,
+      erroConfiguracoes,
 
       atualizarEmpresa,
       atualizarHero,
@@ -331,6 +563,8 @@ export function SiteConfigProvider({ children }) {
     }),
     [
       siteConfig,
+      carregandoConfiguracoes,
+      erroConfiguracoes,
       atualizarEmpresa,
       atualizarHero,
       atualizarCatalogo,
@@ -340,7 +574,9 @@ export function SiteConfigProvider({ children }) {
   );
 
   return (
-    <SiteConfigContext.Provider value={valor}>
+    <SiteConfigContext.Provider
+      value={valor}
+    >
       {children}
     </SiteConfigContext.Provider>
   );

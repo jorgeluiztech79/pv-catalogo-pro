@@ -25,7 +25,7 @@ const siteConfig = {
     imagemAlt:
       "Apresentação visual da Comunidade Maromba",
 
-    tag: "Peptídeos Premium",
+    tag: "Produtos Premium",
 
     titulo:
       "Produtos de qualidade com atendimento especializado.",

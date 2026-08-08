@@ -329,7 +329,7 @@ function Personalizacao() {
                 <Input
                   name="logo"
                   label="URL do logo"
-                  type="url"
+                  type="text"
                   value={
                     formData.logo.startsWith("data:")
                       ? ""
@@ -364,7 +364,7 @@ function Personalizacao() {
                 <Input
                   name="imagem"
                   label="URL da imagem principal"
-                  type="url"
+                  type="text"
                   value={
                     formData.imagem.startsWith("data:")
                       ? ""
